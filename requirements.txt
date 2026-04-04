@@ -1,3 +1,4 @@
 Django>=4.2,<5
 Pillow>=9.0,<11
+gunicorn>=21.0,<24
 # Optional SMS: pip install twilio  (only if using TwilioSMSBackend)
