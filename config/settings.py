@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import quote_plus
 
 import dj_database_url
 
@@ -69,15 +70,33 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+
+def _resolve_database_url() -> str:
+    """Resolve Postgres URL from env. See .env.example for DigitalOcean bindable variables."""
+    for key in ('DATABASE_URL', 'DJANGO_DATABASE_URL'):
+        raw = (os.environ.get(key) or '').strip()
+        if raw:
+            return raw
+    user = (os.environ.get('POSTGRES_USER') or os.environ.get('PGUSER') or '').strip()
+    password = os.environ.get('POSTGRES_PASSWORD') or os.environ.get('PGPASSWORD') or ''
+    host = (os.environ.get('POSTGRES_HOST') or os.environ.get('PGHOST') or '').strip()
+    port = (os.environ.get('POSTGRES_PORT') or os.environ.get('PGPORT') or '5432').strip()
+    dbname = (os.environ.get('POSTGRES_DB') or os.environ.get('PGDATABASE') or '').strip()
+    if user and host and dbname:
+        q = quote_plus(user, safe='')
+        pq = quote_plus(password, safe='')
+        ssl = (os.environ.get('POSTGRES_SSLMODE') or 'require').strip()
+        return f'postgresql://{q}:{pq}@{host}:{port}/{dbname}?sslmode={ssl}'
+    return ''
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-# Production: set DATABASE_URL in the host (e.g. DigitalOcean links Managed Postgres and injects it).
-# Local: optional .env file (see .env.example); never commit real credentials.
-_database_url = (os.environ.get('DATABASE_URL') or '').strip()
+_database_url = _resolve_database_url()
 if _database_url:
     ssl_required = os.environ.get('DATABASE_SSL_REQUIRE', 'true').lower() in ('1', 'true', 'yes')
     DATABASES['default'] = dj_database_url.parse(
