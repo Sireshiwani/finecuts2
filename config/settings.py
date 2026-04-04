@@ -1,12 +1,23 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-2e2ko6a343tb3%==f70+6)8&nev#^5rj1-_)@&+63%vxarx*=^'
-DEBUG = True
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-2e2ko6a343tb3%==f70+6)8&nev#^5rj1-_)@&+63%vxarx*=^",
+)
+DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("1", "true", "yes")
 
-ALLOWED_HOSTS = []
+_allowed = os.environ.get("DJANGO_ALLOWED_HOSTS", "").strip()
+if _allowed:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()]
+else:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
 
+_csrf = os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").strip()
+if _csrf:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(",") if o.strip()]
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
