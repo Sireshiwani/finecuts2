@@ -68,9 +68,12 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-if os.environ.get('DATABASE_URL'):
+_database_url = (os.environ.get('DATABASE_URL') or '').strip()
+# DO/App Platform may define DATABASE_URL empty until a DB is linked; whitespace-only is truthy in Python.
+if _database_url:
     ssl_required = os.environ.get('DATABASE_SSL_REQUIRE', 'true').lower() in ('1', 'true', 'yes')
-    DATABASES['default'] = dj_database_url.config(
+    DATABASES['default'] = dj_database_url.parse(
+        _database_url,
         conn_max_age=600,
         conn_health_checks=True,
         ssl_require=ssl_required,
